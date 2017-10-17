@@ -29,10 +29,7 @@ class CustomFieldsTest(mango.UserDocsTextTests):
             "name": "location.address.street",
             "type": "string"
         },
-        {"name": "name\\.first", "type": "string"},
-        {"name": "exists_field", "type": "string"},
-        {"name": "exists_array.[]", "type": "string"},
-        {"name": "exists_object.should", "type": "string"}
+        {"name": "name\\.first", "type": "string"}
     ]
 
     def test_basic(self):
@@ -165,6 +162,16 @@ class CustomFieldsTest(mango.UserDocsTextTests):
         assert len(docs) == 1
         assert docs[0]["user_id"] == 10
 
+@unittest.skipUnless(mango.has_text_service(), "requires text service")
+class CustomFieldsExistsTest(mango.UserDocsTextTests):
+
+    FIELDS = [
+        {"name": "exists_field", "type": "string"},
+        {"name": "exists_array.[]", "type": "string"},
+        {"name": "exists_object.should", "type": "string"},
+        {"name": "twitter", "type": "string"}
+    ]
+
     def test_exists_field(self):
         docs = self.db.find({"exists_field": {"$exists": True}})
         assert len(docs) == 2
@@ -187,7 +194,7 @@ class CustomFieldsTest(mango.UserDocsTextTests):
         for d in docs:
             assert d["user_id"] not in (9, 10)
 
-    def test_exists_object(self):
+    def test_exists_object_member(self):
         docs = self.db.find({"exists_object.should": {"$exists": True}})
         assert len(docs) == 1
         assert docs[0]["user_id"] == 11
@@ -195,4 +202,11 @@ class CustomFieldsTest(mango.UserDocsTextTests):
         docs = self.db.find({"exists_object.should": {"$exists": False}})
         assert len(docs) == len(user_docs.DOCS) - 1
         for d in docs:
-            assert d["user_id"] !=11
+            assert d["user_id"] != 11
+
+    def test_exists_false_same_as_views(self):
+        docs = self.db.find({
+                "twitter": {"$exists": False}
+            })
+        for d in docs:
+            assert d["user_id"] not in (0, 1, 4, 13)
